@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz do Jogador - Carta FIFA</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #000, #8B0000);
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+}
+h1 { color: #ff0000; text-shadow: 2px 2px 6px rgba(0,0,0,0.6); }
+.config, .quiz { background: #1c1c1c; padding: 20px; border-radius: 15px; max-width: 450px; margin: auto; margin-top: 20px; box-shadow: 0 6px 12px rgba(0,0,0,0.8); border: 2px solid #ff0000; }
+input, select, button { width: 90%; margin: 10px auto; padding: 10px; border-radius: 8px; border: none; font-size: 15px; }
+button { background: #ff0000; color: #fff; font-weight: bold; cursor: pointer; transition: 0.3s; }
+button:hover { background: #cc0000; }
+.fifa-card {
+  width: 280px; height: 420px; margin: 20px auto; border-radius: 20px; padding: 20px; position: relative; color: #fff; font-weight: bold; border: 3px solid gold; box-shadow: 0 0 15px gold; text-align: center; overflow: hidden;
+}
+.fifa-card img { width: 100px; height: 100px; border-radius: 50%; margin-top: 30px; object-fit: cover; border: 2px solid #fff; }
+.overall { position: absolute; top: 20px; left: 20px; font-size: 40px; font-weight: bold; }
+.posicao { position: absolute; top: 70px; left: 25px; font-size: 18px; }
+.nome { margin-top: 10px; font-size: 22px; }
+.clube, .nacionalidade, .idade { font-size: 14px; margin-top: 5px; }
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; font-size: 14px; }
+.descricao { margin-top: 15px; font-style: italic; color: #ccc; max-width: 450px; margin-left: auto; margin-right: auto; }
+#downloadBtn { display: none; margin-top: 15px; }
+</style>
+</head>
+<body>
+<h1>⚽ Quiz do Jogador</h1>
+
+<div id="config" class="config">
+  <h2>Crie seu Jogador</h2>
+  <input type="text" id="nomeJogador" placeholder="Digite o nome (ou deixe vazio)">
+  <select id="nacionalidadeJogador">
+    <option value="Aleatório">Aleatório</option>
+    <option value="🇧🇷 Brasil">🇧🇷 Brasil</option>
+    <option value="🇦🇷 Argentina">🇦🇷 Argentina</option>
+    <option value="🇵🇹 Portugal">🇵🇹 Portugal</option>
+    <option value="🇫🇷 França">🇫🇷 França</option>
+    <option value="🇪🇸 Espanha">🇪🇸 Espanha</option>
+    <option value="🇮🇹 Itália">🇮🇹 Itália</option>
+  </select>
+  <button onclick="iniciarQuiz()">Começar Quiz</button>
+</div>
+
+<div id="quiz-container" class="quiz" style="display:none;"></div>
+<div id="resultado"></div>
+<button id="downloadBtn" onclick="baixarCarta()">📥 Baixar Carta</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+const perguntas = [
+  { pergunta: "Qual sua posição favorita?", opcoes: ["Goleiro", "Defensor", "Meia", "Atacante"] },
+  { pergunta: "Qual sua maior qualidade?", opcoes: ["Velocidade", "Criatividade", "Finalização", "Liderança"] },
+  { pergunta: "Qual seu pé preferido?", opcoes: ["Direito", "Esquerdo", "Ambidestro"] },
+  { pergunta: "Prefere ser ídolo em clube pequeno ou estrela em clube gigante?", opcoes: ["Ídolo em clube pequeno", "Estrela em clube gigante"] },
+  { pergunta: "Você é mais...", opcoes: ["Disciplinado", "Explosivo"] },
+  { pergunta: "Qual sua altura?", opcoes: ["Baixo e ágil", "Altura média", "Alto e forte"] },
+  { pergunta: "Fora de campo, você é...", opcoes: ["Reservado", "Carismático", "Polêmico"] }
+];
+
+const clubes = ["Flamengo","Palmeiras","Corinthians","São Paulo","Santos","Barcelona","Real Madrid","Manchester United","Liverpool","PSG","Juventus","Milan","Bayern de Munique"];
+const nacionalidades = ["🇧🇷 Brasil","🇦🇷 Argentina","🇵🇹 Portugal","🇫🇷 França","🇪🇸 Espanha","🇮🇹 Itália"];
+const nomes = ["João Silva","Carlos Mendes","Rafael Costa","Diego Santos","Lucas Pereira","Matheus Rocha","André Oliveira"];
+
+let respostas = [], indice = 0, nomeFinal = "", nacionalidadeFinal = "";
+
+function iniciarQuiz() {
+  const nomeInput = document.getElementById("nomeJogador").value.trim();
+  const nacionalidadeInput = document.getElementById("nacionalidadeJogador").value;
+  nomeFinal = nomeInput || nomes[Math.floor(Math.random()*nomes.length)];
+  nacionalidadeFinal = (nacionalidadeInput==="Aleatório") ? nacionalidades[Math.floor(Math.random()*nacionalidades.length)] : nacionalidadeInput;
+  document.getElementById("config").style.display="none";
+  document.getElementById("quiz-container").style.display="block";
+  mostrarPergunta();
+}
+
+function mostrarPergunta(){
+  if(indice<perguntas.length){
+    const q=perguntas[indice];
+    let html=`<h2>${q.pergunta}</h2>`;
+    q.opcoes.forEach(opcao=>{
+      html+=`<button onclick="responder('${opcao}')">${opcao}</button>`;
+    });
+    document.getElementById("quiz-container").innerHTML=html;
+  }else{gerarJogador();}
+}
+
+function responder(opcao){respostas.push(opcao);indice++;mostrarPergunta();}
+
+function gerarJogador(){
+  document.getElementById("quiz-container").innerHTML="";
+  const clube=clubes[Math.floor(Math.random()*clubes.length)];
+  const idade=Math.floor(17+Math.random()*18);
+  let overall=70+Math.floor(Math.random()*20);
+
+  const stats={
+    PAC: Math.floor(50+Math.random()*50),
+    SHO: Math.floor(50+Math.random()*50),
+    PAS: Math.floor(50+Math.random()*50),
+    DRI: Math.floor(50+Math.random()*50),
+    DEF: Math.floor(50+Math.random()*50),
+    PHY: Math.floor(50+Math.random()*50)
+  };
+
+  if(respostas.includes("Velocidade")) stats.PAC+=15;
+  if(respostas.includes("Criatividade")) stats.PAS+=15;
+  if(respostas.includes("Finalização")) stats.SHO+=15;
+  if(respostas.includes("Liderança")) stats.PHY+=15;
+  if(respostas.includes("Estrela em clube gigante")) overall+=3;
+  if(respostas.includes("Ídolo em clube pequeno")) overall+=5;
+  if(overall>99) overall=99;
+
+  // Definir cor da carta
+  let cor="#cd7f32"; // bronze
+  if(overall>=65 && overall<=74) cor="#c0c0c0"; // prata
+  if(overall>=75 && overall<=85) cor="#ffd700"; // ouro
+  if(overall>85) cor="#00ffff"; // especial (tipo carta TOTY)
+
+  // Imagem aleatória (placeholder)
+  const avatar=`https://i.pravatar.cc/100?img=${Math.floor(Math.random()*70+1)}`;
+
+  const narrativa=`Um ${respostas[0].toLowerCase()} ${respostas[1].toLowerCase()}, ${respostas[4].toLowerCase()} dentro de campo, atualmente no ${clube}. Ídolo ${respostas[3]==="Ídolo em clube pequeno"?"local":"mundial"}, representando ${nacionalidadeFinal}.`;
+
+  document.getElementById("resultado").innerHTML=`
+    <div class="fifa-card" id="carta" style="border-color:${cor}; box-shadow:0 0 15px ${cor}; background:linear-gradient(160deg, #1a1a1a, ${cor})">
+      <div class="overall">${overall}</div>
+      <div class="posicao">${respostas[0].substring(0,3).toUpperCase()}</div>
+      <img src="${avatar}" alt="Jogador">
+      <div class="nome">${nomeFinal}</div>
+      <div class="clube">${clube}</div>
+      <div class="nacionalidade">${nacionalidadeFinal}</div>
+      <div class="idade">${idade} anos</div>
+      <div class="stats">
+        <div>PAC: ${stats.PAC}</div>
+        <div>SHO: ${stats.SHO}</div>
+        <div>PAS: ${stats.PAS}</div>
+        <div>DRI: ${stats.DRI}</div>
+        <div>DEF: ${stats.DEF}</div>
+        <div>PHY: ${stats.PHY}</div>
+      </div>
+    </div>
+    <div class="descricao">${narrativa}</div>
+  `;
+  document.getElementById("downloadBtn").style.display="block";
+}
+
+function baixarCarta(){
+  const carta=document.getElementById("carta");
+  html2canvas(carta).then(canvas=>{
+    const link=document.createElement("a");
+    link.download="jogador-fifa.png";
+    link.href=canvas.toDataURL();
+    link.click();
+  });
+}
+</script>
+</body>
+</html>
